@@ -1,3 +1,10 @@
+// NEW IN VERSION 1.7 experimental (by Óscar Palau):
+// Modified version to handle a digital color sensor TCS3200 via digital pin number 6
+// remaping S4A sensors panel Analog 3,Analog4 and Analago5 to show values for RGB color obtained from the TCS3200 sensor
+// Loop iteration it has been modified introducing sequential readings from that sensor, switching color filters 
+// using S1 ans S2 pins connected to digital pin 11 and 12 to pass HIGH and LOW values in order to activate a filter according to the
+// selected color whose we try to scan each miliseconds (Red, Green and Blue) 
+
 // NEW IN VERSION 1.6c (by Jorge Gomez):
 // Fixed variable type in pin structure: pin.state should be int, not byte
 // Optimized speed of execution while receiving data from computer in readSerialPort()
@@ -83,61 +90,36 @@ Función bucle principal de ejecución del programa
 void loop(){
   static unsigned long timerCheckUpdate = millis();//tiempo máximo en milisegundos que evita que se resetee Arduino. Si se supera, Arduino se resetea sucesivamente.
   unsigned int lecturasColor[5];
-  if (millis()-timerCheckUpdate>=20){
-    pinMode(3,OUTPUT); 		// ponemos el pin 3 como salida digital    
-    pinMode(5,OUTPUT); 		// ponemos el pin 5 como salida digital    
-    pinMode(8,OUTPUT); 		// ponemos el pin 6 como salida digital    
-    //encendemos led RGB BLANCO
-    digitalWrite(3,0);
-    digitalWrite(5,0);
-    digitalWrite(8,0);
-    delay(20000);
-    //sendUpdateServomotors();
-    sendSensorValues();
-    pinMode(PIN_LECTURA, INPUT); 		// ponemos el pin 6 como entrada digital    
+  if (millis()-timerCheckUpdate>=20){    
+    pinMode(PIN_LECTURA, INPUT); // ponemos el pin 6 como entrada digital    
     //--------------------------------------------------------------------------------------------------------/
     digitalWrite(PIN_S2,LOW); //Seleccionamos filtro color Rojo del sensor S2=LOW,S3=LOW
     digitalWrite(PIN_S3,LOW);
-    for (int cont=0;cont< 5;cont++)
+    for (int cont=0;cont< 5;cont++)//realiza 5 lecturas consecutivas, para eliminar valores de pico que induzcan a error
       lecturasColor[cont]=pulseIn(PIN_LECTURA,LOW);  // lee el tiempo que tardo el pulso en regresar echo     
-    insertionSort(lecturasColor,5); //sort readings
-    valorRojo=lecturasColor[2]; //select median reading          
-    ScratchBoardSensorReport(3,valorRojo);   // Envia el valorRojo al editbox del ANALOG 3
-    
-    //encendemos led RGB ROJO
-    digitalWrite(3,255);
-    digitalWrite(5,255);
-    digitalWrite(8,0);
-    delay(20000);
-    //--------------------------------------------------------------------------------------------------------/
-    //valorRojo=pulseIn(PIN_LECTURA,LOW);  // lee el tiempo que tardo el pulso en regresar echo     OPCION pulseIn 1
-    //valorRojo=pulseIn(PIN_LECTURA,digitalRead(PIN_LECTURA)==HIGH?LOW:HIGH);  // lee el tiempo que tardo e pulso en regresar echo OPCION 2
+    insertionSort(lecturasColor,5); //ordena de menor a mayor los 5 valores leidos
+    valorRojo=lecturasColor[2]; //selecciona la mediana entre los 5 valores           
+    ScratchBoardSensorReport(3,valorRojo);   // Envia el valorRojo al editbox del ANALOG 3    
+    delay(100);
+    //--------------------------------------------------------------------------------------------------------/    
     digitalWrite(PIN_S2,HIGH); //Seleccionamos filtro color Verde del sensor S2=HIGH,S3=HIGH
     digitalWrite(PIN_S3,HIGH);
-    for (int cont=0;cont< 5;cont++)
+    for (int cont=0;cont< 5;cont++)//realiza 5 lecturas consecutivas, para eliminar valores de pico que induzcan a error
       lecturasColor[cont]=pulseIn(PIN_LECTURA,LOW);  // lee el tiempo que tardo el pulso en regresar echo    OPCION pulseIn 3 
-    insertionSort(lecturasColor,5); //sort readings
-    valorVerde=lecturasColor[2]; //select median reading      
+    insertionSort(lecturasColor,5); //ordena de menor a mayor los 5 valores leidos
+    valorVerde=lecturasColor[2]; //selecciona la mediana entre los 5 valores  
     ScratchBoardSensorReport(4,valorVerde);  // Envia el valorVerde al editbox del ANALOG 4
-    //encendemos led RGB VERDE
-    digitalWrite(3,255);
-    digitalWrite(5,0);
-    digitalWrite(8,255);
-    delay(20000);
+    delay(100);
     //--------------------------------------------------------------------------------------------------------/
     digitalWrite(PIN_S2,LOW); //Seleccionamos filtro color Verde del sensor S2=LOW,S3=HIGH
     digitalWrite(PIN_S3,HIGH);
-    for (int cont=0;cont< 5;cont++)
+    for (int cont=0;cont< 5;cont++)//realiza 5 lecturas consecutivas, para eliminar valores de pico que induzcan a error
       lecturasColor[cont]=pulseIn(PIN_LECTURA,LOW);  // lee el tiempo que tardo el pulso en regresar echo     
-    insertionSort(lecturasColor,5); //sort readings
-    valorAzul= lecturasColor[2]; //select median reading        
+    insertionSort(lecturasColor,5); //ordena de menor a mayor los 5 valores leidos
+    valorAzul= lecturasColor[2]; //selecciona la mediana entre los 5 valores 
     ScratchBoardSensorReport(5,valorAzul);   // Envia el valorAzul al editbox del ANALOG 5
     //--------------------------------------------------------------------------------------------------------/
-    //encendemos led RGB AZUL
-    digitalWrite(3,0);
-    digitalWrite(5,255);
-    digitalWrite(8,255);
-    delay(20000);
+    delay(100);
     timerCheckUpdate=millis();
   }
   readSerialPort();
